@@ -1,0 +1,46 @@
+﻿<Window x:Class="Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Desktop"
+        mc:Ignorable="d" Name="Self"
+        Title="MainWindow" Height="350" Width="525" d:DataContext="{d:DesignInstance }">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid Row="0">
+            <StackPanel Margin="24,24,24,0">
+                <DockPanel>
+                    <Button Padding="0" DockPanel.Dock="Right" Width="24" Height="24"
+                            Click="OpenDialog">
+                        ...
+                    </Button>
+                    <TextBox HorizontalAlignment="Stretch" Height="24" DockPanel.Dock="Right"
+                             DataContext="{Binding ElementName=Self}"
+                             Text="{Binding PathFolder, UpdateSourceTrigger=Explicit}" />
+
+                </DockPanel>
+                <DockPanel Margin="0,24">
+                    <CheckBox Content="Удалить пакеты" DockPanel.Dock="Bottom" IsChecked="True" />
+                    <CheckBox Content="Удалить системные" DockPanel.Dock="Bottom" IsChecked="True" />
+                    <CheckBox Content="Игноритьва скрытые" DockPanel.Dock="Bottom" IsChecked="False" />
+                </DockPanel>
+                <Button Width="Auto" Height="Auto" HorizontalAlignment="Right" Click="StartClean">Очистить</Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid Row="1">
+            <TextBlock>Info:</TextBlock>
+        </Grid>
+        <Grid Row="2" VerticalAlignment="Stretch">
+            <TextBox ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.CanContentScroll="True" Name="InfoBox" Height="Auto" Width="Auto" />
+
+        </Grid>
+    </Grid>
+</Window>
