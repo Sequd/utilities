@@ -5,14 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Desktop"
         mc:Ignorable="d" Name="Self"
-        Title="MainWindow" Height="350" Width="525" d:DataContext="{d:DesignInstance }">
+        Title="MainWindow" Height="350" Width="525">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Row="0">
+        <Grid Grid.Row="0">
             <StackPanel Margin="24,24,24,0">
                 <DockPanel>
                     <Button Padding="0" DockPanel.Dock="Right" Width="24" Height="24"
@@ -33,10 +33,10 @@
             </StackPanel>
         </Grid>
 
-        <Grid Row="1">
+        <Grid Grid.Row="1">
             <TextBlock>Info:</TextBlock>
         </Grid>
-        <Grid Row="2" VerticalAlignment="Stretch">
+        <Grid Grid.Row="2" VerticalAlignment="Stretch">
             <TextBox ScrollViewer.HorizontalScrollBarVisibility="Auto"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.CanContentScroll="True" Name="InfoBox" Height="Auto" Width="Auto" />

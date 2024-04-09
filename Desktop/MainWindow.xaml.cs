@@ -1,8 +1,6 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Forms;
 using CleanBin;
 using Desktop.Annotations;
@@ -14,8 +12,10 @@ namespace Desktop
     /// </summary>
     public partial class MainWindow : INotifyPropertyChanged
     {
-        private string _pathFolder = String.Empty;
+        private string _pathFolder = string.Empty;
         private string _description;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public string PathFolder
         {
@@ -47,15 +47,13 @@ namespace Desktop
         {
             using (var dialog = new FolderBrowserDialog())
             {
-                DialogResult result = dialog.ShowDialog();
+                var result = dialog.ShowDialog();
                 if (result == System.Windows.Forms.DialogResult.OK)
                 {
                     PathFolder = dialog.SelectedPath;
                 }
             }
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -67,9 +65,9 @@ namespace Desktop
         {
             if (string.IsNullOrEmpty(_pathFolder))
                 return;
-            
-            CleanerService cleanerService = new CleanerService();
-            var directories = cleanerService.CleanFolder(PathFolder, false, null, null);
+
+            var cleanerService = new CleanerService();
+            var directories = cleanerService.CleanFolder(_pathFolder, false, null, null);
             foreach (var directory in directories)
             {
                 InfoBox.AppendText(directory);

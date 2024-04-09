@@ -7,13 +7,13 @@ namespace CleanBin
 {
     public class CleanerService
     {
-        private static readonly string[] DEFAULT_IGNORE_DIR = new[] {""};
-        private static readonly string[] DEFAULT_CLEAN_DIR = new[] {"bin", "obj", "packages"};
+        private static readonly string[] DEFAULT_IGNORE_DIR = { "" };
+        private static readonly string[] DEFAULT_CLEAN_DIR = { "bin", "obj", "packages" };
 
         public IEnumerable<string> Dir(string path)
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
-            string[] directories = Directory.GetDirectories(path);
+            var directories = Directory.GetDirectories(path);
             foreach (var directory in directories)
             {
                 var directoryInfo = new DirectoryInfo(directory);
@@ -21,8 +21,7 @@ namespace CleanBin
             }
         }
 
-        public IEnumerable<string> CleanFolder(string path, bool needSysClean = false, string[] ingnoreDir = null,
-            string[] cleanDir = null)
+        public IEnumerable<string> CleanFolder(string path, bool needSysClean = false, string[] ingnoreDir = null, string[] cleanDir = null)
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
 
@@ -31,8 +30,8 @@ namespace CleanBin
             if (cleanDir == null)
                 cleanDir = DEFAULT_CLEAN_DIR;
 
-            string[] directories = Directory.GetDirectories(path);
-            Queue<string> queue = new Queue<string>(directories);
+            var directories = Directory.GetDirectories(path);
+            var queue = new Queue<string>(directories);
             while (queue.Count > 0)
             {
                 var dir = queue.Dequeue();
@@ -42,7 +41,7 @@ namespace CleanBin
                 // пропусткаем если совпало с игнором
                 if (ingnoreDir.Contains(directoryInfo.Name)) continue;
 
-                bool isSystem = false;
+                var isSystem = false;
                 if (needSysClean)
                     isSystem = directoryInfo.Name.ToLower().StartsWith(".");
 
