@@ -13,7 +13,7 @@ namespace CleanBin
         /// Точка входа в приложение
         /// </summary>
         /// <param name="args">Аргументы командной строки</param>
-        public static Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
             // Создаем хост с конфигурацией
             var host = CreateHostBuilder(args).Build();
@@ -29,30 +29,52 @@ namespace CleanBin
             
             try
             {
-                var dirs = cleanerService.GetDirectories(path);
-                foreach (var dir in dirs)
+                // Получаем список директорий асинхронно
+                var dirsResult = await cleanerService.GetDirectoriesAsync(path);
+                if (!dirsResult.IsSuccess)
+                {
+                    Console.WriteLine($"Ошибка при получении списка папок: {dirsResult.ErrorMessage}");
+                    return;
+                }
+
+                Console.WriteLine("Найденные директории:");
+                foreach (var dir in dirsResult.Value!)
                 {
                     Console.WriteLine($"  - {dir}");
                 }
 
                 Console.WriteLine($"\nНачинаем рекурсивную очистку:");
-                var directories = cleanerService.CleanFolder(path);
-                foreach (var directory in directories)
-                {
-                    Console.WriteLine($"Обработано: {directory}");
-                }
                 
-                Console.WriteLine("\nОчистка завершена успешно!");
+                // Создаем прогресс-репорт для отображения прогресса
+                var progress = new Progress<string>(message => Console.WriteLine($"  {message}"));
+                
+                var cleanResult = await cleanerService.CleanFolderAsync(path, progress: progress);
+                
+                if (cleanResult.IsSuccess)
+                {
+                    Console.WriteLine("\nОчистка завершена успешно!");
+                    
+                    // Показываем статистику
+                    var statistics = cleanerService.GetStatistics();
+                    Console.WriteLine($"\n{statistics}");
+                }
+                else
+                {
+                    Console.WriteLine($"Ошибка при очистке: {cleanResult.ErrorMessage}");
+                    if (cleanResult.Exception != null)
+                    {
+                        Console.WriteLine($"Детали ошибки: {cleanResult.Exception}");
+                    }
+                }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Ошибка при очистке: {e.Message}");
+                Console.WriteLine($"Неожиданная ошибка: {e.Message}");
+                Console.WriteLine($"Детали: {e}");
             }
             
             Console.WriteLine("\nНажмите Enter для выхода...");
             Console.ReadLine();
-            
-            return Task.CompletedTask;
         }
 
         /// <summary>
