@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace CleanBin
 {
@@ -7,29 +7,37 @@ namespace CleanBin
         public static void Main(string[] args)
         {
             CleanerService service = new CleanerService();
-            string path = @"C:\Users\Sequd\Documents\GitHub\Work";
-            Console.WriteLine(path);
-            Console.WriteLine($"Directories:");
-            var dirs = service.Dir(path);
-            foreach (var dir in dirs)
-            {
-                Console.WriteLine(dir);
-            }
-
-            Console.WriteLine($"Recurcive cleaning:");
+            
+            // Получаем путь из аргументов командной строки или используем текущую директорию
+            string path = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            
+            Console.WriteLine($"Очистка папки: {path}");
+            Console.WriteLine($"Найденные директории:");
+            
             try
             {
+                var dirs = service.Dir(path);
+                foreach (var dir in dirs)
+                {
+                    Console.WriteLine($"  - {dir}");
+                }
+
+                Console.WriteLine($"\nНачинаем рекурсивную очистку:");
                 var directories = service.CleanFolder(path);
                 foreach (var directory in directories)
                 {
-                    Console.WriteLine(directory);
+                    Console.WriteLine($"Обработано: {directory}");
                 }
+                
+                Console.WriteLine("\nОчистка завершена успешно!");
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine($"Ошибка при очистке: {e.Message}");
             }
-            Console.ReadKey();
+            
+            Console.WriteLine("\nНажмите Enter для выхода...");
+            Console.ReadLine();
         }
     }
 }

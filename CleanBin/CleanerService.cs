@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +21,7 @@ namespace CleanBin
             }
         }
 
-        public IEnumerable<string> CleanFolder(string path, bool needSysClean = false, string[] ingnoreDir = null, string[] cleanDir = null)
+        public IEnumerable<string> CleanFolder(string path, bool needSysClean = false, string[]? ingnoreDir = null, string[]? cleanDir = null)
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
 
