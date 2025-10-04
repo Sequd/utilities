@@ -2,15 +2,27 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.Options;
 
 namespace CleanBin
 {
-    public class CleanerService
+    /// <summary>
+    /// Сервис для очистки папок от временных файлов и директорий
+    /// </summary>
+    public class CleanerService : ICleanerService
     {
-        private static readonly string[] DEFAULT_IGNORE_DIR = { "" };
-        private static readonly string[] DEFAULT_CLEAN_DIR = { "bin", "obj", "packages" };
+        private readonly CleanBinOptions _options;
 
-        public IEnumerable<string> Dir(string path)
+        /// <summary>
+        /// Конструктор сервиса очистки
+        /// </summary>
+        /// <param name="options">Опции конфигурации</param>
+        public CleanerService(IOptions<CleanBinOptions> options)
+        {
+            _options = options.Value;
+        }
+
+        public IEnumerable<string> GetDirectories(string path)
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
             var directories = Directory.GetDirectories(path);
@@ -21,14 +33,17 @@ namespace CleanBin
             }
         }
 
-        public IEnumerable<string> CleanFolder(string path, bool needSysClean = false, string[]? ingnoreDir = null, string[]? cleanDir = null)
+        public IEnumerable<string> CleanFolder(string path, bool needSysClean = false, string[]? ignoreDirectories = null, string[]? cleanDirectories = null)
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
 
-            if (ingnoreDir == null)
-                ingnoreDir = DEFAULT_IGNORE_DIR;
-            if (cleanDir == null)
-                cleanDir = DEFAULT_CLEAN_DIR;
+            // Используем конфигурацию по умолчанию, если не переданы параметры
+            ignoreDirectories ??= _options.DefaultIgnoreDirectories;
+            cleanDirectories ??= _options.DefaultCleanDirectories;
+            
+            // Используем настройку из конфигурации для системной очистки, если не указано явно
+            if (!needSysClean)
+                needSysClean = _options.EnableSystemClean;
 
             var directories = Directory.GetDirectories(path);
             var queue = new Queue<string>(directories);
@@ -38,16 +53,15 @@ namespace CleanBin
                 var directoryInfo = new DirectoryInfo(dir);
                 yield return dir;
 
-                // пропусткаем если совпало с игнором
-                if (ingnoreDir.Contains(directoryInfo.Name)) continue;
+                // Пропускаем если папка в списке игнорирования
+                if (ignoreDirectories.Contains(directoryInfo.Name)) continue;
 
                 var isSystem = false;
                 if (needSysClean)
                     isSystem = directoryInfo.Name.ToLower().StartsWith(".");
 
-                // проверяем и удаляем
-                // игнорировать скрытые directoryInfo.Attributes & FileAttributes.Hidden) != 0 &&
-                if (cleanDir.Contains(directoryInfo.Name) || isSystem)
+                // Проверяем и удаляем папки из списка очистки или системные папки
+                if (cleanDirectories.Contains(directoryInfo.Name) || isSystem)
                 {
                     try
                     {

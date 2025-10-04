@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Forms;
 using CleanBin;
 using Desktop.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Desktop
 {
@@ -12,8 +13,9 @@ namespace Desktop
     /// </summary>
     public partial class MainWindow : INotifyPropertyChanged
     {
+        private readonly ICleanerService _cleanerService;
         private string _pathFolder = string.Empty;
-        private string _description;
+        private string _description = string.Empty;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -38,8 +40,13 @@ namespace Desktop
         }
 
 
-        public MainWindow()
+        /// <summary>
+        /// Конструктор главного окна
+        /// </summary>
+        /// <param name="cleanerService">Сервис очистки папок</param>
+        public MainWindow(ICleanerService cleanerService)
         {
+            _cleanerService = cleanerService ?? throw new ArgumentNullException(nameof(cleanerService));
             InitializeComponent();
         }
 
@@ -75,8 +82,7 @@ namespace Desktop
                 InfoBox.AppendText($"Начинаем очистку папки: {_pathFolder}\n");
                 InfoBox.AppendText("=====================================\n");
 
-                var cleanerService = new CleanerService();
-                var directories = cleanerService.CleanFolder(_pathFolder, false, null, null);
+                var directories = _cleanerService.CleanFolder(_pathFolder, false, null, null);
                 
                 int processedCount = 0;
                 foreach (var directory in directories)
