@@ -6,6 +6,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanBin", "CleanBin\CleanB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Desktop", "Desktop\Desktop.csproj", "{D8DD289D-36D0-4DE1-B63F-3C34223DEA55}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanBin.Tests", "CleanBin.Tests\CleanBin.Tests.csproj", "{F1E2D3C4-B5A6-9870-1234-567890ABCDEF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{D8DD289D-36D0-4DE1-B63F-3C34223DEA55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8DD289D-36D0-4DE1-B63F-3C34223DEA55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8DD289D-36D0-4DE1-B63F-3C34223DEA55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1E2D3C4-B5A6-9870-1234-567890ABCDEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1E2D3C4-B5A6-9870-1234-567890ABCDEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1E2D3C4-B5A6-9870-1234-567890ABCDEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1E2D3C4-B5A6-9870-1234-567890ABCDEF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

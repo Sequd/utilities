@@ -1,0 +1,57 @@
+name: Update Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version (e.g., 2.1.0)'
+        required: true
+        type: string
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  update-version:
+    name: Update Version
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Update version in Directory.Build.props
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" Directory.Build.props
+        sed -i "s/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>$VERSION.0<\/AssemblyVersion>/" Directory.Build.props
+        sed -i "s/<FileVersion>.*<\/FileVersion>/<FileVersion>$VERSION.0<\/FileVersion>/" Directory.Build.props
+        
+    - name: Update version in sonar-project.properties
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        sed -i "s/sonar.projectVersion=.*/sonar.projectVersion=$VERSION/" sonar-project.properties
+        
+    - name: Commit changes
+      run: |
+        git add .
+        git commit -m "Update version to ${{ github.event.inputs.version }}"
+        git push
+        
+    - name: Create tag
+      run: |
+        git tag "v${{ github.event.inputs.version }}"
+        git push origin "v${{ github.event.inputs.version }}"

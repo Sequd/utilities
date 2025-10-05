@@ -91,7 +91,11 @@ namespace CleanBin
                         context.Configuration.GetSection("CleanBin"));
                     
                     // Регистрируем сервисы
-                    services.AddSingleton<ICleanerService, CleanerService>();
+                    services.AddSingleton<IConfigurationProfileManager, ConfigurationProfileManager>();
+                    services.AddSingleton<IFilePreviewService, FilePreviewService>();
+                    services.AddSingleton<IBackupService, BackupService>();
+                    services.AddSingleton<ICacheService, MemoryCacheService>();
+                    services.AddSingleton<ICleanerService, EnhancedCleanerService>();
                 });
     }
 }

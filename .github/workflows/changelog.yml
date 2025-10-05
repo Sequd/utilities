@@ -1,0 +1,70 @@
+name: Generate Changelog
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Generate changelog
+      run: |
+        # Get the latest tag
+        LATEST_TAG=$(git describe --tags --abbrev=0)
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 $LATEST_TAG^ 2>/dev/null || echo "")
+        
+        # Create changelog
+        echo "# Changelog" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "## [Unreleased]" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### Added" >> CHANGELOG.md
+        echo "- " >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### Changed" >> CHANGELOG.md
+        echo "- " >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### Fixed" >> CHANGELOG.md
+        echo "- " >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### Removed" >> CHANGELOG.md
+        echo "- " >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        
+        # Add previous releases
+        if [ -n "$PREVIOUS_TAG" ]; then
+          echo "## [$LATEST_TAG] - $(git log -1 --format=%ai $LATEST_TAG | cut -d' ' -f1)" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          git log --pretty=format:"- %s" $PREVIOUS_TAG..$LATEST_TAG >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+        fi
+        
+    - name: Commit changelog
+      run: |
+        git add CHANGELOG.md
+        git commit -m "Update changelog" || exit 0
+        git push || exit 0
