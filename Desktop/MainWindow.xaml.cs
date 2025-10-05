@@ -1,9 +1,10 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Forms;
 using CleanBin;
 using Desktop.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Desktop
 {
@@ -12,10 +13,11 @@ namespace Desktop
     /// </summary>
     public partial class MainWindow : INotifyPropertyChanged
     {
+        private readonly ICleanerService _cleanerService;
         private string _pathFolder = string.Empty;
-        private string _description;
+        private string _description = string.Empty;
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public string PathFolder
         {
@@ -38,8 +40,13 @@ namespace Desktop
         }
 
 
-        public MainWindow()
+        /// <summary>
+        /// Конструктор главного окна
+        /// </summary>
+        /// <param name="cleanerService">Сервис очистки папок</param>
+        public MainWindow(ICleanerService cleanerService)
         {
+            _cleanerService = cleanerService ?? throw new ArgumentNullException(nameof(cleanerService));
             InitializeComponent();
         }
 
@@ -56,7 +63,7 @@ namespace Desktop
         }
 
         [NotifyPropertyChangedInvocator]
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -64,15 +71,32 @@ namespace Desktop
         private void StartClean(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(_pathFolder))
-                return;
-
-            var cleanerService = new CleanerService();
-            var directories = cleanerService.CleanFolder(_pathFolder, false, null, null);
-            foreach (var directory in directories)
             {
-                InfoBox.AppendText(directory);
-                InfoBox.AppendText("\n");
-                InfoBox.ScrollToEnd();
+                InfoBox.AppendText("Ошибка: Не выбран путь для очистки!\n");
+                return;
+            }
+
+            try
+            {
+                InfoBox.Clear();
+                InfoBox.AppendText($"Начинаем очистку папки: {_pathFolder}\n");
+                InfoBox.AppendText("=====================================\n");
+
+                var directories = _cleanerService.CleanFolder(_pathFolder, false, null, null);
+                
+                int processedCount = 0;
+                foreach (var directory in directories)
+                {
+                    InfoBox.AppendText($"Обработано: {directory}\n");
+                    InfoBox.ScrollToEnd();
+                    processedCount++;
+                }
+                
+                InfoBox.AppendText($"\nОчистка завершена! Обработано папок: {processedCount}\n");
+            }
+            catch (Exception ex)
+            {
+                InfoBox.AppendText($"\nОшибка при очистке: {ex.Message}\n");
             }
         }
     }
