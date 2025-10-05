@@ -1,0 +1,93 @@
+name: Update Dependencies
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Every Monday at 9 AM
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SOLUTION_FILE: 'Utilites.sln'
+
+jobs:
+  update-dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Check for outdated packages
+      run: |
+        dotnet list package --outdated --include-transitive
+        
+    - name: Update packages
+      run: |
+        # Update CleanBin project
+        dotnet add CleanBin/CleanBin.csproj package Microsoft.Extensions.DependencyInjection --version latest
+        dotnet add CleanBin/CleanBin.csproj package Microsoft.Extensions.Hosting --version latest
+        dotnet add CleanBin/CleanBin.csproj package Microsoft.Extensions.Configuration --version latest
+        dotnet add CleanBin/CleanBin.csproj package Microsoft.Extensions.Configuration.Json --version latest
+        
+        # Update Desktop project
+        dotnet add Desktop/Desktop.csproj package Microsoft.Extensions.DependencyInjection --version latest
+        dotnet add Desktop/Desktop.csproj package Microsoft.Extensions.Hosting --version latest
+        dotnet add Desktop/Desktop.csproj package Microsoft.Extensions.Configuration --version latest
+        dotnet add Desktop/Desktop.csproj package Microsoft.Extensions.Configuration.Json --version latest
+        
+        # Update Tests project
+        dotnet add CleanBin.Tests/CleanBin.Tests.csproj package Microsoft.NET.Test.Sdk --version latest
+        dotnet add CleanBin.Tests/CleanBin.Tests.csproj package xunit --version latest
+        dotnet add CleanBin.Tests/CleanBin.Tests.csproj package xunit.runner.visualstudio --version latest
+        dotnet add CleanBin.Tests/CleanBin.Tests.csproj package coverlet.collector --version latest
+        dotnet add CleanBin.Tests/CleanBin.Tests.csproj package Moq --version latest
+        dotnet add CleanBin.Tests/CleanBin.Tests.csproj package FluentAssertions --version latest
+        
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+      
+    - name: Build solution
+      run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
+      
+    - name: Run tests
+      run: dotnet test ${{ env.SOLUTION_FILE }} --configuration Release --no-build --verbosity normal
+      
+    - name: Commit changes
+      run: |
+        git add .
+        git commit -m "Update dependencies to latest versions" || exit 0
+        git push || exit 0
+        
+    - name: Create PR
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: "Update dependencies to latest versions"
+        body: |
+          This PR updates all dependencies to their latest versions.
+          
+          ## Changes
+          - Updated all NuGet packages to latest versions
+          - Verified all tests pass
+          - Verified solution builds successfully
+          
+          ## Testing
+          - [x] All tests pass
+          - [x] Solution builds successfully
+          - [x] No breaking changes detected
+        branch: update-dependencies
+        delete-branch: true

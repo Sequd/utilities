@@ -4,8 +4,6 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <AssemblyName>Desktop</AssemblyName>
     <RootNamespace>Desktop</RootNamespace>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

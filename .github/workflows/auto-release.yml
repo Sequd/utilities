@@ -1,0 +1,203 @@
+name: Auto Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SOLUTION_FILE: 'Utilites.sln'
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Get version
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 $VERSION^ 2>/dev/null || echo "")
+        
+        echo "## CleanBin $VERSION" > release_notes.md
+        echo "" >> release_notes.md
+        echo "### What's New" >> release_notes.md
+        echo "" >> release_notes.md
+        
+        if [ -n "$PREVIOUS_TAG" ]; then
+          echo "#### Changes since $PREVIOUS_TAG:" >> release_notes.md
+          echo "" >> release_notes.md
+          git log --pretty=format:"- %s" $PREVIOUS_TAG..$VERSION >> release_notes.md
+          echo "" >> release_notes.md
+        fi
+        
+        echo "### Features" >> release_notes.md
+        echo "- Modern .NET 8 implementation" >> release_notes.md
+        echo "- Clean Architecture with Dependency Injection" >> release_notes.md
+        echo "- Async/await support with cancellation" >> release_notes.md
+        echo "- Progress reporting and statistics" >> release_notes.md
+        echo "- Comprehensive test coverage" >> release_notes.md
+        echo "- Cross-platform support" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### Downloads" >> release_notes.md
+        echo "- **CleanBin** - Console application" >> release_notes.md
+        echo "- **Desktop** - WPF application (Windows only)" >> release_notes.md
+        echo "- **CleanBin.Tests** - Test suite" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### Installation" >> release_notes.md
+        echo "\`\`\`bash" >> release_notes.md
+        echo "dotnet tool install -g CleanBin" >> release_notes.md
+        echo "\`\`\`" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### Usage" >> release_notes.md
+        echo "\`\`\`bash" >> release_notes.md
+        echo "cleanbin \"C:\\MyProject\"" >> release_notes.md
+        echo "\`\`\`" >> release_notes.md
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: CleanBin ${{ steps.get_version.outputs.version }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+
+  build-and-package:
+    name: Build and Package
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+      
+    - name: Build solution
+      run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
+      
+    - name: Run tests
+      run: dotnet test ${{ env.SOLUTION_FILE }} --configuration Release --no-build --verbosity normal
+      
+    - name: Publish CleanBin
+      run: |
+        RUNTIME=${{ matrix.runtime }}
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          RUNTIME="linux-x64"
+        elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+          RUNTIME="win-x64"
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          RUNTIME="osx-x64"
+        fi
+        
+        dotnet publish CleanBin/CleanBin.csproj --configuration Release --runtime $RUNTIME --self-contained true --output ./publish/CleanBin-${{ matrix.os }}-${{ needs.create-release.outputs.version }}
+        
+    - name: Publish Desktop (Windows only)
+      if: matrix.os == 'windows-latest'
+      run: |
+        dotnet publish Desktop/Desktop.csproj --configuration Release --runtime win-x64 --self-contained true --output ./publish/Desktop-windows-${{ needs.create-release.outputs.version }}
+        
+    - name: Create archive
+      run: |
+        cd publish
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          powershell Compress-Archive -Path "CleanBin-windows-*" -DestinationPath "CleanBin-windows-${{ needs.create-release.outputs.version }}.zip"
+          powershell Compress-Archive -Path "Desktop-windows-*" -DestinationPath "Desktop-windows-${{ needs.create-release.outputs.version }}.zip"
+        else
+          tar -czf "CleanBin-${{ matrix.os }}-${{ needs.create-release.outputs.version }}.tar.gz" "CleanBin-${{ matrix.os }}-"*
+        fi
+        
+    - name: Upload CleanBin artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: CleanBin-${{ matrix.os }}-${{ needs.create-release.outputs.version }}
+        path: publish/CleanBin-${{ matrix.os }}-${{ needs.create-release.outputs.version }}.*
+        
+    - name: Upload Desktop artifact (Windows only)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: Desktop-windows-${{ needs.create-release.outputs.version }}
+        path: publish/Desktop-windows-${{ needs.create-release.outputs.version }}.*
+
+  upload-release-assets:
+    name: Upload Release Assets
+    needs: [create-release, build-and-package]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      
+    - name: Upload CleanBin Linux
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./CleanBin-ubuntu-latest-${{ needs.create-release.outputs.version }}/CleanBin-ubuntu-latest-${{ needs.create-release.outputs.version }}.tar.gz
+        asset_name: CleanBin-Linux-x64.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: Upload CleanBin Windows
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./CleanBin-windows-latest-${{ needs.create-release.outputs.version }}/CleanBin-windows-${{ needs.create-release.outputs.version }}.zip
+        asset_name: CleanBin-Windows-x64.zip
+        asset_content_type: application/zip
+        
+    - name: Upload CleanBin macOS
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./CleanBin-macos-latest-${{ needs.create-release.outputs.version }}/CleanBin-macos-latest-${{ needs.create-release.outputs.version }}.tar.gz
+        asset_name: CleanBin-macOS-x64.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: Upload Desktop Windows
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./Desktop-windows-latest-${{ needs.create-release.outputs.version }}/Desktop-windows-${{ needs.create-release.outputs.version }}.zip
+        asset_name: Desktop-Windows-x64.zip
+        asset_content_type: application/zip

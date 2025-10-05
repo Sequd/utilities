@@ -1,0 +1,70 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  bump-version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Install GitVersion
+      run: |
+        dotnet tool install --global GitVersion.Tool
+        
+    - name: Calculate version
+      id: gitversion
+      run: |
+        gitversion /output json /showvariable FullSemVer > version.json
+        echo "VERSION=$(cat version.json)" >> $GITHUB_OUTPUT
+        
+    - name: Update version in project files
+      run: |
+        VERSION=${{ steps.gitversion.outputs.VERSION }}
+        # Update CleanBin project
+        sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" CleanBin/CleanBin.csproj
+        # Update Desktop project
+        sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" Desktop/Desktop.csproj
+        # Update Tests project
+        sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" CleanBin.Tests/CleanBin.Tests.csproj
+        
+    - name: Commit changes
+      run: |
+        git add .
+        git commit -m "Bump version to ${{ steps.gitversion.outputs.VERSION }}"
+        git push
+        
+    - name: Create tag
+      run: |
+        git tag "v${{ steps.gitversion.outputs.VERSION }}"
+        git push origin "v${{ steps.gitversion.outputs.VERSION }}"
