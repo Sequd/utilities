@@ -195,32 +195,10 @@
 - **Тестирование**: Полное покрытие модульными и интеграционными тестами
 
 ### Файловая структура
-```
-/workspace/
-├── CleanBin/                    # Основная библиотека
-│   ├── CleanBin.csproj         # SDK-style проект
-│   ├── ICleanerService.cs      # Интерфейс сервиса
-│   ├── CleanerService.cs       # Реализация сервиса
-│   ├── PathValidator.cs        # Валидатор путей
-│   ├── OperationResult.cs      # Результат операций
-│   ├── CleanupStatistics.cs    # Статистика
-│   ├── CleanBinOptions.cs      # Опции конфигурации
-│   ├── ConsoleLogger.cs        # Логгер
-│   ├── Program.cs              # Консольное приложение
-│   └── appsettings.json        # Конфигурация
-├── Desktop/                     # WPF приложение
-│   ├── Desktop.csproj          # SDK-style проект
-│   ├── MainWindow.xaml         # Обновленный UI
-│   └── MainWindow.xaml.cs      # Обновленный код-behind
-├── CleanBin.Tests/             # Тестовый проект
-│   ├── CleanBin.Tests.csproj   # SDK-style проект
-│   ├── PathValidatorTests.cs   # Тесты валидатора
-│   ├── OperationResultTests.cs # Тесты результата операций
-│   ├── CleanupStatisticsTests.cs # Тесты статистики
-│   ├── CleanerServiceTests.cs  # Тесты сервиса
-│   └── IntegrationTests.cs     # Интеграционные тесты
-└── Utilites.sln                # Обновленное решение
-```
+- **CleanBin/** - Основная библиотека с логикой очистки
+- **Desktop/** - WPF приложение с графическим интерфейсом  
+- **CleanBin.Tests/** - Тестовый проект с модульными и интеграционными тестами
+- **Utilites.sln** - Обновленное решение
 
 ## Заключение
 
